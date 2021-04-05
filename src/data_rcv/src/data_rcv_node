@@ -1,0 +1,43 @@
+#include <iostream>
+#include <ros/ros.h>  //必须包含的头文件
+#include <mavros_msgs/State.h>  //此次需要订阅的消息体的头文件
+#include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/Imu.h>
+#include <geometry_msgs/PoseStamped.h>
+using namespace std;
+
+geometry_msgs::PoseStamped current_position; //建立一个该消息体类型的变量，用于存储订阅的信息
+
+
+//回调函数，订阅的时候必须要有的，一个订阅对应一个回调函数
+//作用：在接受到该消息体的内容时执行里面的内容，这里面的内容就是赋值和打印
+void lp_cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
+{
+        current_position = *msg;
+        cout << current_position.pose.position.x <<" "<< current_position.pose.position.y <<" "<< current_position.pose.position.z << endl;
+       
+}
+
+int main(int argc,char **argv)
+{
+        ros::init(argc,argv,"dingyue"); //ros系统的初始化，最后一个参数为节点名称
+        ros::NodeHandle nh;  //声明一个nh对象，NodeHandle这个类很重要，很多操作都是在这个类里面
+	
+
+        //订阅。<>里面为模板参数，传入的是订阅的消息体类型，（）里面传入三个参数，分别是该消息体的位置、缓存大小（通常为1000）、回调函数
+        ros::Subscriber lp_sub = nh.subscribe<geometry_msgs::PoseStamped>("mavros/local_position/pose",10,lp_cb);
+
+        //设置下面的循环速率 20hz
+	ros::Rate rate(20.0);
+
+        //大循环
+	while(ros::ok())
+	{
+                ros::spinOnce(); //循环等待回调函数，用来处理所有的消息体的回调函数，类似与轮训.即所有的消息体的回调函数是在这里面触发（使用）的
+                                 //ros::spinOnce();和rate.sleep();是成对存在的，两者的运行时间之和=ros::Rate rate(20.0)设定的时间;如果ros::spinOnce();没有
+                                 //执行，则rate.sleep();的时间就为ros::Rate rate(20.0)设定的时间
+                rate.sleep();//延时
+	}
+	
+	return 0;
+}
